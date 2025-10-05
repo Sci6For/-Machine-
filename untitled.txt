@@ -1,0 +1,34 @@
+title: "Пример дашборда Lumen"
+
+sources:
+  dataframe:  # Источник данных — DataFrame
+    type: dataframe
+    data:
+      value: !expr data  # Ссылка на наш DataFrame
+
+widgets:
+  - name: year_slider
+    type: range_slider
+    field: year
+    label: "Выберите диапазон лет"
+    start: 2000
+    end: 2005
+
+  - name: category_filter
+    type: multi_select
+    field: category
+    label: "Выберите категории"
+    options: ["A", "B", "C", "D"]
+
+plots:
+  - type: bar
+    x: category
+    y: value
+    title: "Суммарное значение по категориям"
+    filters: [year_slider, category_filter]
+
+  - type: line
+    x: year
+    y: value
+    title: "Динамика значений по годам"
+    filters: [category_filter]
