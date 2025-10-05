@@ -137,3 +137,4 @@ class Array_controll(tk.Frame):
     def listern_keybord_mode(self, flag):
         self.listern_keybord_flag = flag
 # synced: 2025-10-05T17:23:16.955427
+# synced: 2025-10-05T17:23:19.880865
