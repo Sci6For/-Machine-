@@ -71,3 +71,4 @@ class GcodeArea(tk.Frame):
             self.on_click_callback()
 # synced: 2025-10-05T17:23:16.944175
 # synced: 2025-10-05T17:23:19.876782
+# synced: 2025-10-05T17:23:22.755231
