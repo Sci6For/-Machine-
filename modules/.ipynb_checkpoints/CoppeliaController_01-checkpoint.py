@@ -49,3 +49,5 @@ class CoppeliaController(PrinterController):
         self.send_command("G90 \n" +
             "G1 X0 Y0 Z0 E0 \n" +
             "G91")
+
+# synced: 2025-10-05T17:23:16.967849

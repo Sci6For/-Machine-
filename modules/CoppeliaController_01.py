@@ -1,10 +1,12 @@
-# Перезагрузка контроллера под работу с CoppeliaSim вместо Serial
 from PrinterController_01 import PrinterController
 from ClientCoppeliaSim_01 import Client_CoppeliaSim
+import re
+import numpy as np
+import time
 
 class CoppeliaController(PrinterController):
     def connect(self):
-        """        Подключение к принтеру.        """
+        """Подключение к CoppeliaSim"""
         try:
             self.connection = Client_CoppeliaSim()
             self.connection.__enter__()
@@ -13,39 +15,61 @@ class CoppeliaController(PrinterController):
             print(f"Ошибка подключения: {e}")
 
     def disconnect(self):
-        """        Отключение от принтера.        """
-        if self.connection and self.connection.is_open:
-            self.connection.__exit__()
-            print("Соединение закрыто")
+        """Отключение от CoppeliaSim"""
+        if self.connection:
+            try:
+                self.connection.__exit__()
+                print("Соединение закрыто")
+            except Exception as e:
+                print(f"Ошибка при отключении: {e}")
 
     def send_command(self, command, read_response=True):
         """
-        Отправка команды на принтер.
-        :param command: Команда для отправки (строка G-кода).
-        :param read_response: Флаг, указывающий, нужно ли читать ответ принтера.
-        :return: Ответ принтера (если read_response=True).
+        Отправка команды (G-кода) в CoppeliaSim.
         """
-        if not self.connection or not self.connection.is_open:
-            print("Ошибка: Соединение не установлено")
+        if not self.connection:
+            print("Ошибка: соединение не установлено")
             return None
 
         try:
-            # Отправка команды
             self.connection.send_string("gcode_str", (command + "\n").encode('utf-8'))
             if self.debug_mode:
                 print(f"Отправлено: {command}")
-            else:
-                return None
-        
         except Exception as e:
             print(f"Ошибка при отправке команды: {e}")
             return None
-    
+
     def home(self):
-        """        Возврат всех осей в исходное положение (Home).        """
-        # # self.send_command("G1 X0 Y0 Z0 E0")
-        # self.move(x=0, y=0, z=0, e=0)
-        # self.position = np.zeros(4)
-        self.send_command("G90 \n" +
-            "G1 X0 Y0 Z0 E0 \n" +
-            "G91")
+        """Возврат всех осей в исходное положение"""
+        self.send_command("G90\nG1 X0 Y0 Z0 E0\nG91")
+        self.position = np.zeros(4)
+
+    # --- Новый функционал ниже ---
+    def run_gcode(self, gcode_lines, speed=800):
+        """
+        Выполняет список строк G-кода (G0/G1) в CoppeliaSim.
+        """
+        print("Начало выполнения G-кода...")
+        for line in gcode_lines:
+            line = line.strip()
+            if not line or line.startswith(";"):
+                continue
+
+            if line.startswith(("G0", "G1")):
+                x = self._get_value(line, "X")
+                y = self._get_value(line, "Y")
+                z = self._get_value(line, "Z")
+                f = self._get_value(line, "F", default=speed)
+                self.move(x=x, y=y, z=z, speed=f)
+                time.sleep(0.1)
+
+        print("Выполнение G-кода завершено.")
+
+    def _get_value(self, line, key, default=None):
+        """Извлекает значение координаты из строки G-кода"""
+        match = re.search(rf"{key}(-?\d+\.?\d*)", line)
+        if match:
+            return float(match.group(1))
+        return default
+
+# synced: 2025-10-05T17:23:16.956438

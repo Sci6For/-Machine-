@@ -79,3 +79,5 @@ class GcodeArea(tk.Frame):
 
     def add_string(self, string):
         self.text_area.insert("end", string)
+
+# synced: 2025-10-05T17:23:16.972274

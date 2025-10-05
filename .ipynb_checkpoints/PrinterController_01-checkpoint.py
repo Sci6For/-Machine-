@@ -196,3 +196,5 @@ class PrinterController:
 
     def set_cold_extrusion(self):
         self.send_command("M302 P1 ; Разрешить холодную экструзию")
+
+# synced: 2025-10-05T17:23:16.948172

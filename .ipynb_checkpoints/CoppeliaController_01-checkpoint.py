@@ -46,3 +46,5 @@ class CoppeliaController(PrinterController):
         # self.send_command("G1 X0 Y0 Z0 E0")
         self.move(x=0, y=0, z=0, e=0)
         self.position = np.zeros(4)
+
+# synced: 2025-10-05T17:23:16.941891

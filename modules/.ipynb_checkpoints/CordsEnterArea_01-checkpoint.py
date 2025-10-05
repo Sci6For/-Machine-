@@ -99,3 +99,5 @@ class CordsEnterArea(tk.Frame):
                 area.config(state="disabled")  # Отключаем
             else:
                 area.config(state="normal")
+
+# synced: 2025-10-05T17:23:16.967849
