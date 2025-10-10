@@ -273,3 +273,4 @@ class CoppeliaController(PrinterController):
             print(f"Критическая ошибка связи с CoppeliaSim при запросе M114: {e}", file=sys.stderr)
             return None
 # synced: 2025-10-10T17:50:44.572960
+# synced: 2025-10-10T17:50:48.360924
