@@ -45,6 +45,23 @@ class Client_CoppeliaSim:
 
     def send_status_mesage(self, message):
         sim.simxAddStatusbarMessage(self.id, message, sim.simx_opmode_oneshot)
+
+    def read_float(self, signal_name):
+        """
+        Читает float-сигнал из CoppeliaSim.
+        Возвращает значение float или None, если ошибка.
+        """
+        try:
+            res, value = sim.simxGetFloatSignal(self.id, signal_name, sim.simx_opmode_blocking)
+            if res == sim.simx_return_ok:
+                return value
+            else:
+                print(f"Ошибка чтения {signal_name}: код {res}")
+                return None
+        except Exception as e:
+            print(f"Ошибка при чтении сигнала {signal_name}: {e}")
+            return None
+
 # synced: 2025-10-05T17:23:16.956438
 # synced: 2025-10-05T17:23:19.880865
 # synced: 2025-10-05T17:23:22.756980
@@ -119,3 +136,4 @@ class Client_CoppeliaSim:
 # synced: 2025-10-05T17:26:15.624819
 # synced: 2025-10-05T17:26:17.913387
 # synced: 2025-10-05T17:26:20.180384
+# synced: 2025-10-10T17:50:44.571958

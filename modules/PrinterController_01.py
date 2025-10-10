@@ -1,8 +1,9 @@
-# Контроллер 
+# Контроллер
 #     умеет устанавливать соединение и высылать команды G-code
 
 import numpy as np
 import serial
+import sys
 
 
 class PrinterController:
@@ -13,24 +14,25 @@ class PrinterController:
         :param baud_rate: Скорость передачи данных (по умолчанию 115200).
         :param timeout: Время ожидания ответа от принтера (в секундах).
         """
-        self.connection = None         # объект связи с serial
-        self.position = np.zeros(4)    # отсчет положения принтера
+        self.connection = None  # объект связи с serial
+        self.position = np.zeros(4)  # отсчет положения принтера
 
         # константы
         self.com_port = kwargs.get('com_port', 'COM4')
         self.baud_rate = kwargs.get('baud_rate', 115200)
         self.timeout = kwargs.get('timeout', 1)
         self.speed = kwargs.get('speed', 3000)
-        self.k_e = kwargs.get('k_e', 1/9)
+        self.k_e = kwargs.get('k_e', 1 / 9)
         self.invert = kwargs.get('invert', (1, 1, 1, 1))
 
         # флаги
-        self.debug_mode = kwargs.get('debug', False)        # выключатель контольных сообщений
-        self.abs_mode = None           # принтер в режиме абсолютных координат
+        self.debug_mode = kwargs.get('debug', False)  # выключатель контольных сообщений
+        self.abs_mode = None  # принтер в режиме абсолютных координат
 
     def connect(self):
         """        Подключение к принтеру.        """
         try:
+            # В CoppeliaSim этот метод будет переопределен
             self.connection = serial.Serial(self.com_port, self.baud_rate, timeout=self.timeout)
             print(f"Подключено к {self.com_port} со скоростью {self.baud_rate} бод")
         except Exception as e:
@@ -69,7 +71,7 @@ class PrinterController:
                 return response.strip()
             else:
                 return None
-        
+
         except Exception as e:
             print(f"Ошибка при отправке команды: {e}")
             return None
@@ -78,7 +80,7 @@ class PrinterController:
         """        Возврат всех осей в исходное положение (Home).        """
         self.send_command("G28")
         self.position = np.zeros(4)
-        
+
     def set_temperature(self, tool_temp=None, bed_temp=None, wait=False):
         """
         Установка температуры хотэнда и/или стола.
@@ -107,8 +109,8 @@ class PrinterController:
             speed = self.speed
         if not self.abs_mode or self.abs_mode is None:
             self._set_abs_cords()
-        
-        self.position = self._position_to_abs(x, y, z, e)      
+
+        self.position = self._position_to_abs(x, y, z, e)
         command = self._create_G_code_cord_str("G1", x, y, z, e, speed)
         self.send_command(command)
 
@@ -135,32 +137,32 @@ class PrinterController:
         if self.abs_mode or self.abs_mode is None:
             self._set_rel_cords()
 
-        self.position = self._position_to_rel(x, y, z, e)      
+        self.position = self._position_to_rel(x, y, z, e)
         command = self._create_G_code_cord_str("G1", x, y, z, e, speed)
         self.send_command(command)
 
     def _position_to_rel(self, x, y, z, e):
         """        Определение положения по относительной команде        """
         pos = self.position.copy()
-        
+
         if x is not None: pos[0] += x * self.invert[0]
         if y is not None: pos[1] += y * self.invert[1]
-        if z is not None: pos[2] += z * self.invert[2] 
+        if z is not None: pos[2] += z * self.invert[2]
         if e is not None: pos[3] += e * self.invert[3] * self.k_e
-        
+
         return pos
-            
+
     def _create_G_code_cord_str(self, prefix, x, y, z, e, speed):
         command = prefix
-        
+
         if x is not None:            command += f" X{x * self.invert[0]}"
         if y is not None:            command += f" Y{y * self.invert[1]}"
         if z is not None:            command += f" Z{z * self.invert[2]}"
         if e is not None:            command += f" E{e * self.invert[3] * self.k_e}"
         if speed is not None:        command += f" F{speed}"
-        
+
         return command
-        
+
     def _set_abs_cords(self):
         """ Установка режима абсолютных координат """
         self.abs_mode = True
@@ -170,7 +172,7 @@ class PrinterController:
         """ Установка режима относительных координат """
         self.abs_mode = False
         self.send_command("G91")
-    
+
     def set_zero(self, x=0, y=0, z=0, e=0):
         """
         Установка (начальных) координат.
@@ -179,20 +181,21 @@ class PrinterController:
         :param z: Позиция по оси Z (в мм).
         :param e: Экструзия (в мм).
         """
-       
+
         command = self._create_G_code_cord_str("G92", x, y, z, e, None)
         self.send_command(command)
 
     def get_position(self, auto_print=False):
         """
         Получение текущей позиции осей.
-        :return: Текущая позиция (строка).
+        В базовом классе возвращает None, так как команда M114 должна
+        обрабатываться через выделенный канал в CoppeliaController.
         """
-        _message = self.send_command("M114")
-
-        if auto_print:
-            print(_message)
-        return _message
+        # --- ИСПРАВЛЕНО: УДАЛЕН ВЫЗОВ M114 ---
+        # Вызов M114 заблокирован, чтобы избежать дублирования в CoppeliaController.
+        if self.debug_mode or auto_print:
+            print("Base PrinterController get_position called. Use CoppeliaController.get_position().", file=sys.stderr)
+        return None
 
     def set_cold_extrusion(self):
         self.send_command("M302 P1 ; Разрешить холодную экструзию")
@@ -271,3 +274,4 @@ class PrinterController:
 # synced: 2025-10-05T17:26:15.624819
 # synced: 2025-10-05T17:26:17.915389
 # synced: 2025-10-05T17:26:20.182389
+# synced: 2025-10-10T17:50:44.573961
